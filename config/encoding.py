@@ -1,32 +1,30 @@
-class Coordenate:
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
-
-
-class Agent:
-    def __init__(self, start: tuple[int, int], goal: tuple[int, int]):
-        self.start = Coordenate(start[0], start[1])
-        self.goal = Coordenate(goal[0], goal[1])
-        self.position = self.start
-
-
 class MAPF:
+    actions = ["up", "down", "left", "right", "wait"]
+    directions = {
+        "up": (0, 1),
+        "down": (0, -1),
+        "left": (-1, 0),
+        "right": (1, 0),
+        "wait": (0, 0),
+    }
+
     def __init__(
         self,
         range_x: int,
         range_y: int,
-        agents: list[Agent],
-        obstacles: list[Coordenate],
+        agents: list[int],
+        starts: list[tuple],
+        goals: list[tuple],
+        obstacles: list[tuple],
     ):
         self.range_x = range_x
         self.range_y = range_y
         self.agents = agents
+        self.starts = starts
+        self.goals = goals
         self.obstacles = obstacles
 
-    def show_details(self):
-        print("Multi-Agent Path Finding\n")
-        print("range_x =", self.range_x)
-        print("range_y =", self.range_y)
-        print("number of agents =", len(self.agents))
-        print("number of obstacles =", len(self.obstacles))
+
+# CONSTRAINTS
+# C1 (shift variables): cada vertice u shiftea a exactamente uno de sus vecinos v en cada paso t
+# C2 (vertex conflicts): dos o mas agentes no pueden ocupar el mismo vertice u en un paso t
