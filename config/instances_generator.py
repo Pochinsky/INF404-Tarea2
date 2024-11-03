@@ -16,13 +16,19 @@ def generate_starts_goals(K: int, range_x: int, range_y: int) -> tuple[list, lis
     return (starts, goals)
 
 
-def generate_obstacles(L: int, range_x: int, range_y: int) -> list[tuple]:
+def generate_obstacles(
+    L: int, range_x: int, range_y: int, starts: list[tuple], goals: list[tuple]
+) -> list[tuple]:
     obstacles = []
     for _ in range(L):
         flag = True
         while flag:
             obstacle = (randint(0, range_x - 1), randint(0, range_y - 1))
-            if obstacle not in obstacles:
+            if (
+                obstacle not in obstacles
+                and obstacle not in starts
+                and obstacle not in goals
+            ):
                 obstacles.append(obstacle)
                 flag = False
     return obstacles
@@ -41,6 +47,6 @@ def generate_single_instance(
                 )
             )
         f.write("{}\n".format(L))
-        obstacles = generate_obstacles(L, range_x, range_y)
+        obstacles = generate_obstacles(L, range_x, range_y, starts, goals)
         for obstacle in obstacles:
             f.write("{} {}\n".format(obstacle[0], obstacle[1]))

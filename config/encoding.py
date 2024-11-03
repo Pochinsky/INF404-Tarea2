@@ -1,3 +1,6 @@
+from pysat.formula import CNF
+
+
 class MAPF:
     actions = ["up", "down", "left", "right", "wait"]
     directions = {
@@ -7,6 +10,7 @@ class MAPF:
         "right": (1, 0),
         "wait": (0, 0),
     }
+    formula = CNF()
 
     def __init__(
         self,
@@ -24,7 +28,87 @@ class MAPF:
         self.goals = goals
         self.obstacles = obstacles
 
+    # variables
+    def at(self, r: int, x: int, y: int, t: int, T: int) -> int:
+        return sum(
+            [
+                r * self.range_x * self.range_y * (T + 1),
+                x * self.range_y * (T + 1),
+                y * (T + 1),
+                t + 1,
+            ]
+        )
 
-# CONSTRAINTS
-# C1 (shift variables): cada vertice u shiftea a exactamente uno de sus vecinos v en cada paso t
-# C2 (vertex conflicts): dos o mas agentes no pueden ocupar el mismo vertice u en un paso t
+    def shift(self, x: int, y: int, action: str, t: int, T: int) -> int:
+        return sum(
+            [
+                x * self.range_y * len(self.actions) * T,
+                y * len(self.actions) * T,
+                self.actions.index(action) * T,
+                t + 1,
+            ]
+        )
+
+    # set formula
+    def set_formula(self, T: int):
+        for r in self.agents:
+            # Add starts vertex
+            start_x, start_y = self.starts[r]
+            self.formula.append([self.at(r, start_x, start_y, 0, T)])
+            # Goal achievement
+            goal_x, goal_y = self.goals[r]
+            self.formula.append([self.at(r, goal_x, goal_y, T, T)])
+        for x in range(self.range_x):
+            for y in range(self.range_y):
+                for t in range(T + 1):
+                    # Obstacles conflicts
+                    if (x, y) in self.obstacles:
+                        self.formula.append(
+                            [-self.at(r, x, y, t, T) for r in self.agents]
+                        )
+                    # Vertex conflicts
+                    agents_at_same_time = [self.at(r, x, y, t, T) for r in self.agents]
+                    if len(agents_at_same_time) > 1:
+                        self.formula.extend(
+                            [
+                                [-agents_at_same_time[i], -agents_at_same_time[j]]
+                                for i in range(len(agents_at_same_time))
+                                for j in range(i + 1, len(agents_at_same_time))
+                            ]
+                        )
+                    # A single action per agent can be performed at each time instant
+                    if t > 0:
+                        self.formula.append(
+                            [self.shift(x, y, a, t, T) for a in self.actions]
+                        )
+                        self.formula.extend(
+                            [
+                                [
+                                    -self.shift(x, y, a1, t, T),
+                                    -self.shift(x, y, a2, t, T),
+                                ]
+                                for a1 in self.actions
+                                for a2 in self.actions
+                                if a1 != a2
+                            ]
+                        )
+                    # Swap conflicts
+                    if t < T:
+                        for r1 in self.agents:
+                            for r2 in self.agents:
+                                if r1 != r1:
+                                    for _, (dx, dy) in self.directions.items():
+                                        if (
+                                            x + dx >= 0
+                                            and x + dx < self.range_x
+                                            and y + dy >= 0
+                                            and y + dy < self.range_y
+                                        ):
+                                            self.formula.append(
+                                                [
+                                                    -self.at(r1, x, y, t),
+                                                    -self.at(r2, x + dx, y + dy, t),
+                                                    -self.at(r1, x + dx, y + dy, t + 1),
+                                                    -self.at(r2, x, y, t + 1),
+                                                ]
+                                            )
