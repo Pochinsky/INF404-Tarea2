@@ -1,8 +1,4 @@
-# Data
-
-## Instancias
-
-### Estructura de los archivos
+# Estructura de los archivos
 
 ```text
 range_x range_y

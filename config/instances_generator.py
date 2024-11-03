@@ -1,5 +1,5 @@
 from random import randint
-from data.encoding import Coordenate, Agent
+from config.encoding import Coordenate, Agent
 
 
 def generate_agents(K: int, range_x: int, range_y: int) -> list[Agent]:
@@ -41,7 +41,7 @@ def generate_obstacles(L: int, range_x: int, range_y: int) -> list[Coordenate]:
 
 def generate_single_instance(
     range_x: int, range_y: int, K: int, L: int, file_path: str
-) -> None:
+):
     with open(file_path, "w") as f:
         f.write("{} {}\n{}\n".format(range_x, range_y, K))
         agents = generate_agents(K, range_x, range_y)
