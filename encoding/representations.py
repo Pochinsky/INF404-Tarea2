@@ -1,4 +1,4 @@
-from pysat.formula import CNF
+from encoding.functions import at, shift, finalState
 
 
 class MAPF:
@@ -10,16 +10,18 @@ class MAPF:
         "right": (1, 0),
         "wait": (0, 0),
     }
-    formula = CNF()
+    at_vars = []
+    shift_vars = []
+    finalState_vars = []
 
     def __init__(
         self,
         range_x: int,
         range_y: int,
         agents: list[int],
-        starts: list[tuple],
-        goals: list[tuple],
-        obstacles: list[tuple],
+        starts: list[tuple[int, int]],
+        goals: list[tuple[int, int]],
+        obstacles: list[tuple[int, int]],
     ):
         self.range_x = range_x
         self.range_y = range_y
@@ -27,28 +29,31 @@ class MAPF:
         self.starts = starts
         self.goals = goals
         self.obstacles = obstacles
+        self.V = [(x, y) for x in range(range_x) for y in range(range_y)]
 
-    # variables
-    def at(self, r: int, x: int, y: int, t: int, T: int) -> int:
-        return sum(
-            [
-                r * self.range_x * self.range_y * (T + 1),
-                x * self.range_y * (T + 1),
-                y * (T + 1),
-                t + 1,
-            ]
+    def set_variables(self, T: int):
+        # get vars from at, shift and finalState
+        at_vars = at(self, T)
+        shift_vars = shift(self, T)
+        finalState_vars = finalState(self, T)
+        # define index for every var for PySAT solver
+        at_vars_index = list(range(0, len(at_vars)))
+        shift_vars_index = list(range(len(at_vars), len(at_vars) + len(shift_vars)))
+        finalState_vars_index = list(
+            range(
+                len(at_vars) + len(shift_vars),
+                len(at_vars) + len(shift_vars) + len(finalState_vars),
+            )
         )
+        at_vars_indexed = list(zip(at_vars_index, at_vars))
+        shift_vars_indexed = list(zip(shift_vars_index, shift_vars))
+        finalState_vars_indexed = list(zip(finalState_vars_index, finalState_vars))
+        self.at_vars = at_vars_indexed
+        self.shift_vars = shift_vars_indexed
+        self.finalState_vars = finalState_vars_indexed
 
-    def shift(self, x: int, y: int, action: str, t: int, T: int) -> int:
-        return sum(
-            [
-                x * self.range_y * len(self.actions) * T,
-                y * len(self.actions) * T,
-                self.actions.index(action) * T,
-                t + 1,
-            ]
-        )
 
+"""
     # set formula
     def set_formula(self, T: int):
         for r in self.agents:
@@ -112,3 +117,4 @@ class MAPF:
                                                     -self.at(r2, x, y, t + 1),
                                                 ]
                                             )
+"""

@@ -1,7 +1,9 @@
 from random import randint
 
 
-def generate_starts_goals(K: int, range_x: int, range_y: int) -> tuple[list, list]:
+def generate_starts_goals(
+    K: int, range_x: int, range_y: int
+) -> tuple[list[tuple[int, int]], list[tuple[int, int]]]:
     starts = []
     goals = []
     for _ in range(K):
@@ -17,8 +19,12 @@ def generate_starts_goals(K: int, range_x: int, range_y: int) -> tuple[list, lis
 
 
 def generate_obstacles(
-    L: int, range_x: int, range_y: int, starts: list[tuple], goals: list[tuple]
-) -> list[tuple]:
+    L: int,
+    range_x: int,
+    range_y: int,
+    starts: list[tuple[int, int]],
+    goals: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
     obstacles = []
     for _ in range(L):
         flag = True

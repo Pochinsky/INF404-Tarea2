@@ -1,4 +1,4 @@
-from config.encoding import MAPF
+from encoding.representations import MAPF
 
 
 def read_instance(instance_file_name: str) -> MAPF:
