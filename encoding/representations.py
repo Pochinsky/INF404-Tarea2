@@ -1,4 +1,5 @@
-from encoding.functions import at, shift, finalState
+from pysat.formula import CNF
+from encoding.functions import at, shift, finalState, delta, cost_to_go, free, obstacle
 
 
 class MAPF:
@@ -13,6 +14,11 @@ class MAPF:
     at_vars = []
     shift_vars = []
     finalState_vars = []
+    delta_vars = []
+    cost_vars = []
+    free_vars = []
+    obstacle_vars = []
+    formula = CNF()
 
     def __init__(
         self,
@@ -36,85 +42,88 @@ class MAPF:
         at_vars = at(self, T)
         shift_vars = shift(self, T)
         finalState_vars = finalState(self, T)
+        delta_vars = delta(self)
+        cost_vars = cost_to_go(self)
+        free_vars = free(self)
+        obstacle_vars = obstacle(self)
+        # define lenghts fo lists of vars
+        L_at_vars = len(at_vars)
+        L_shift_vars = len(shift_vars)
+        L_finalState_vars = len(finalState_vars)
+        L_delta_vars = len(delta_vars)
+        L_cost_vars = len(cost_vars)
+        L_free_vars = len(free_vars)
+        L_obstacle_vars = len(obstacle_vars)
         # define index for every var for PySAT solver
-        at_vars_index = list(range(0, len(at_vars)))
-        shift_vars_index = list(range(len(at_vars), len(at_vars) + len(shift_vars)))
+        at_vars_index = list(range(0, L_at_vars))
+        shift_vars_index = list(range(L_at_vars, L_at_vars + L_shift_vars))
         finalState_vars_index = list(
             range(
-                len(at_vars) + len(shift_vars),
-                len(at_vars) + len(shift_vars) + len(finalState_vars),
+                L_at_vars + L_shift_vars,
+                L_at_vars + L_shift_vars + L_finalState_vars,
             )
         )
+        delta_vars_index = list(
+            range(
+                L_at_vars + L_shift_vars + L_finalState_vars,
+                L_at_vars + L_shift_vars + L_finalState_vars + L_delta_vars,
+            )
+        )
+        cost_vars_index = list(
+            range(
+                L_at_vars + L_shift_vars + L_finalState_vars + L_delta_vars,
+                L_at_vars
+                + L_shift_vars
+                + L_finalState_vars
+                + L_delta_vars
+                + L_cost_vars,
+            )
+        )
+        free_vars_index = list(
+            range(
+                L_at_vars
+                + L_shift_vars
+                + L_finalState_vars
+                + L_delta_vars
+                + L_cost_vars,
+                L_at_vars
+                + L_shift_vars
+                + L_finalState_vars
+                + L_delta_vars
+                + L_cost_vars
+                + L_free_vars,
+            )
+        )
+        obstacle_vars_index = list(
+            range(
+                L_at_vars
+                + L_shift_vars
+                + L_finalState_vars
+                + L_delta_vars
+                + L_cost_vars
+                + L_free_vars,
+                L_at_vars
+                + L_shift_vars
+                + L_finalState_vars
+                + L_delta_vars
+                + L_cost_vars
+                + L_free_vars
+                + L_obstacle_vars,
+            )
+        )
+        # associate index to respective var
         at_vars_indexed = list(zip(at_vars_index, at_vars))
         shift_vars_indexed = list(zip(shift_vars_index, shift_vars))
         finalState_vars_indexed = list(zip(finalState_vars_index, finalState_vars))
+        delta_vars_indexed = list(zip(delta_vars_index, delta_vars))
+        cost_vars_indexed = list(zip(cost_vars_index, cost_vars))
+        free_vars_indexed = list(zip(free_vars_index, free_vars))
+        obstacle_vars_indexed = list(zip(obstacle_vars_index, obstacle_vars))
+        # set lists of variables
         self.at_vars = at_vars_indexed
         self.shift_vars = shift_vars_indexed
         self.finalState_vars = finalState_vars_indexed
-
-
-"""
-    # set formula
-    def set_formula(self, T: int):
-        for r in self.agents:
-            # Add starts vertex
-            start_x, start_y = self.starts[r]
-            self.formula.append([self.at(r, start_x, start_y, 0, T)])
-            # Goal achievement
-            goal_x, goal_y = self.goals[r]
-            self.formula.append([self.at(r, goal_x, goal_y, T, T)])
-        for x in range(self.range_x):
-            for y in range(self.range_y):
-                for t in range(T + 1):
-                    # Obstacles conflicts
-                    if (x, y) in self.obstacles:
-                        self.formula.append(
-                            [-self.at(r, x, y, t, T) for r in self.agents]
-                        )
-                    # Vertex conflicts
-                    agents_at_same_time = [self.at(r, x, y, t, T) for r in self.agents]
-                    if len(agents_at_same_time) > 1:
-                        self.formula.extend(
-                            [
-                                [-agents_at_same_time[i], -agents_at_same_time[j]]
-                                for i in range(len(agents_at_same_time))
-                                for j in range(i + 1, len(agents_at_same_time))
-                            ]
-                        )
-                    # A single action per agent can be performed at each time instant
-                    if t > 0:
-                        self.formula.append(
-                            [self.shift(x, y, a, t, T) for a in self.actions]
-                        )
-                        self.formula.extend(
-                            [
-                                [
-                                    -self.shift(x, y, a1, t, T),
-                                    -self.shift(x, y, a2, t, T),
-                                ]
-                                for a1 in self.actions
-                                for a2 in self.actions
-                                if a1 != a2
-                            ]
-                        )
-                    # Swap conflicts
-                    if t < T:
-                        for r1 in self.agents:
-                            for r2 in self.agents:
-                                if r1 != r1:
-                                    for _, (dx, dy) in self.directions.items():
-                                        if (
-                                            x + dx >= 0
-                                            and x + dx < self.range_x
-                                            and y + dy >= 0
-                                            and y + dy < self.range_y
-                                        ):
-                                            self.formula.append(
-                                                [
-                                                    -self.at(r1, x, y, t),
-                                                    -self.at(r2, x + dx, y + dy, t),
-                                                    -self.at(r1, x + dx, y + dy, t + 1),
-                                                    -self.at(r2, x, y, t + 1),
-                                                ]
-                                            )
-"""
+        self.delta_vars = delta_vars_indexed
+        self.cost_vars = cost_vars_indexed
+        self.free_vars = free_vars_indexed
+        self.obstacle_vars = obstacle_vars_indexed
