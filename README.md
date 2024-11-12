@@ -1,5 +1,9 @@
 # Tarea 2 - Lógica Computacional Aplicada
 
+## IMPORTANTE: PROYECTO NO FINALIZADO
+
+La tarea no fue realizada a tiempo y, por consiguiente, la implementación no fue terminada.
+
 ## Pre-requisitos
 
 Tener instalado [python](https://github.com/Pochinsky/INF404-Tarea2.git) y [pip](https://github.com/Pochinsky/INF404-Tarea2.git)
